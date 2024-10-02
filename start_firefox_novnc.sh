@@ -1,48 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# Update and install necessary packages
-pkg update && pkg upgrade -y
-pkg install x11-repo -y
-pkg install xfce4 xfce4-terminal tigervnc firefox python git -y
-
-# Set VNC password if not already set
-if [ ! -f ~/.vnc/passwd ]; then
-    echo "Setting up VNC password..."
-    vncpasswd
-fi
-
-# Create VNC xstartup file if it doesn't exist
-if [ ! -f ~/.vnc/xstartup ]; then
-    echo "Creating VNC xstartup file..."
-    cat << EOF > ~/.vnc/xstartup
-#!/bin/sh
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-startxfce4 &
-EOF
-    chmod +x ~/.vnc/xstartup
-fi
+# Function to check if a command was successful
+check_success() {
+    if [ $? -ne 0 ]; then
+        echo "Error: $1"
+        exit 1
+    fi
+}
 
 # Start VNC server
-echo "Starting VNC server..."
+echo "Starting VNC server on display :1..."
 vncserver :1
+check_success "Failed to start VNC server."
 
-# Clone NoVNC repository if it doesn't exist
-if [ ! -d "noVNC" ]; then
-    echo "Cloning NoVNC repository..."
-    git clone https://github.com/novnc/noVNC.git
-fi
-
-# Start NoVNC
+# Start NoVNC server
 echo "Starting NoVNC server..."
-cd noVNC
+cd noVNC || { echo "NoVNC directory not found. Please clone it first."; exit 1; }
 ./utils/launch.sh --vnc localhost:5901 &
+check_success "Failed to start NoVNC server."
 
 # Get IP address
 IP=$(ifconfig wlan0 | grep 'inet ' | awk '{print $2}')
 
-echo "NoVNC is running. You can access it at:"
-echo "http://$IP:6080/vnc.html"
+if [ -z "$IP" ]; then
+    echo "Error: Could not retrieve IP address."
+else
+    echo "NoVNC is running. You can access it at:"
+    echo "http://$IP:6080/vnc.html"
+fi
 
 # Launch Firefox
 echo "Launching Firefox..."
