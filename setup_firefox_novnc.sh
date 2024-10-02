@@ -50,7 +50,3 @@ else
     echo "NoVNC is running. You can access it at:"
     echo "http://$IP:6080/vnc.html"
 fi
-
-# Launch Firefox
-echo "Launching Firefox..."
-firefox &
